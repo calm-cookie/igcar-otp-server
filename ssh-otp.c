@@ -36,11 +36,11 @@ void hotp(const unsigned char *sbytes, time_t movingFactor, char *code)
     for (i = 0; i < 8; i++) {
         data[i] = i < 4 ? 0 : movingFactor >> (56 - 8*i);
     }
-    unsigned char *r = HMAC(EVP_sha1(), sbytes, 10, data, sizeof(data), NULL, NULL);
+    unsigned char *r = HMAC(EVP_ripemd160(), sbytes, 10, data, sizeof(data), NULL, NULL);
     offset = r[19] & 0xf;
     bin_code = ((r[offset] << 24) | (r[offset+1] << 16) | (r[offset+2] << 8) | r[offset+3]) & 0x7fffffff;
-    otp = bin_code % 1000000;
-    sprintf(code, "%06d", otp);
+    otp = bin_code % 10000000;
+    sprintf(code, "%07d", otp);
 }
 
 void proceed()
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 {
     int i;
     unsigned char sbytes[10];
-    char code[7], input_a[10];
+    char code[8], input_a[10];
     char *input;
     time_t now;
 
@@ -80,11 +80,11 @@ int main(int argc, char *argv[])
     now = time(NULL);
     for (i = 0; i <= MAX_SKEW; i++) {
         hotp(sbytes, now / 30 + i, code);
-        if (strncmp(input, code, 6) == 0) {
+        if (strncmp(input, code, 7) == 0) {
             proceed();
         }
         hotp(sbytes, now / 30 - i, code);
-        if (strncmp(input, code, 6) == 0) {
+        if (strncmp(input, code, 7) == 0) {
             proceed();
         }
     }
